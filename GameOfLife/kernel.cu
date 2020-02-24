@@ -8,7 +8,12 @@
 #include <iostream>
 #include <stdlib.h>
 
-__global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila, int columna, int dimension);
+#ifndef __CUDACC__
+#define __CUDACC__
+#endif
+
+
+__global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila, int columna);
 
 void imprimirMatriz(char* matriz, int dimension, int columna);
 
@@ -73,6 +78,7 @@ int main(int arg, char* argv[])
             rellenarMatriz(matriz,dimension);
             printf("\n***TABLERO INICIAL***\n");
             imprimirMatriz(matriz, dimension, columna);
+            imprimirMatriz(matrizResultado, dimension, columna);
 
             //Iniciamos el kernel
             cudaMalloc(&matriz_d, sizeof(matriz));
@@ -84,13 +90,13 @@ int main(int arg, char* argv[])
 
             //Se podria poner el resultado de una funcion que cambiara el valor de un bool terminado que dijera cuando no quedan
             //mas celulas vivas por ejemplo bool terminado = false ... while(!terminado) ... if(terminar(matriz)) terminado = true
-            while (true) {
+            while (generaciones < 2) {
 
                 if (generaciones == 1) {
-                    movimientoCelular << <1, blockDim >> > (matriz_d, matrizResultado_d, fila, columna, dimension);
+                    movimientoCelular << <1, blockDim >> > (matriz_d, matrizResultado_d, fila, columna);
                 }
                 else {
-                    movimientoCelular << <1, blockDim >> > (matrizResultado_d, matrizResultado_d, fila, columna, dimension);
+                    movimientoCelular << <1, blockDim >> > (matrizResultado_d, matrizResultado_d, fila, columna);
                 }
 
                 cudaMemcpy(&matrizResultado, matrizResultado_d, sizeof(matrizResultado), cudaMemcpyDeviceToHost);
@@ -117,8 +123,14 @@ int main(int arg, char* argv[])
     }
 }
 
-__global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila, int columna, int dimension) {
+__global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila, int columna) {
 
+    int posicion = threadIdx.x * columna + threadIdx.y;
+
+    char* celula = matriz + posicion;
+    char* celulaCambio = matrizResultado + posicion;
+
+    matrizResultado[posicion] = 'X';
 }
 
 void imprimirMatriz(char* matriz, int dimension, int columna) {
@@ -143,7 +155,7 @@ void rellenarMatriz(char* matriz, int dimension) {
 
         int random = rand() % dimension + 1;
 
-        if (random % 8 == 0) {
+        if (random % 8 == 0 | random % 9 == 0) {
             *celula = 'X';
         }
         else {
