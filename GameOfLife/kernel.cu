@@ -18,6 +18,8 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
 
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
 
+int contarVivas(char* matriz, int dimension);
+
 void imprimirMatriz(char* matriz, int dimension, int columna);
 
 void rellenarMatriz(char* matriz, int dimension);
@@ -36,6 +38,10 @@ int main(int arg, char* argv[])
         int fila = atoi(filaPuntero);
         char* columnaPuntero = argv[3];
         int columna = atoi(columnaPuntero);
+
+        //Inicializamos cudaDeviceProp para coger las propiedades de la tarjeta
+        cudaDeviceProp propiedades;
+        HANDLE_ERROR(cudaGetDeviceProperties(&propiedades, 0));
 
         //Dimension de la matriz
         int dimension = columna * fila;
@@ -58,6 +64,9 @@ int main(int arg, char* argv[])
         else if ((strcmp("-m", argv[1]) & strcmp("-a", argv[1])) != 0) {
             printf("\nERROR: Argumentos validos solo -m[manual] o -a[automatico]\n");
         }
+        else if(propiedades.maxThreadsPerBlock < dimension){
+            printf("\nERROR: Numero de bloques supera el maximo permitido por su tarjeta.\n");
+        }
         //Una vez comprobado todo empezamos con la ejecucion
         else {
 
@@ -74,12 +83,13 @@ int main(int arg, char* argv[])
             imprimirMatriz(matriz, dimension, columna);
 
             int generaciones = 1; //Cuenta cuantas iteraciones (generaciones) han habido
+            int vivas = 0;
 
             //Se podria poner el resultado de una funcion que cambiara el valor de un bool terminado que dijera cuando no quedan
             //mas celulas vivas por ejemplo bool terminado = false ... while(!terminado) ... if(terminar(matriz)) terminado = true
-            while (generaciones < 10) {
+            while (vivas != dimension) {
 
-                //system("CLS");
+                system("CLS");
 
                 if (generaciones == 1) {
                     lanzarKernel(matriz, matrizResultado, fila, columna);
@@ -88,7 +98,10 @@ int main(int arg, char* argv[])
                     lanzarKernel(matrizResultado, matrizResultado, fila, columna);
                 }
 
+                vivas = contarVivas(matrizResultado, dimension);
+
                 printf("\nGeneracion: %d\n", generaciones);
+                printf("Celulas vivas: %d\n", vivas);
                 imprimirMatriz(matrizResultado, dimension, columna);
 
                 //Si el usuario marca como manual, cada generacion tendra que pulsar alguna tecla para continuar
@@ -114,9 +127,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
 
     int posicion = threadIdx.x * columna + threadIdx.y;
 
-    char* celula = matriz + posicion;
-    char* celulaCambio = matrizResultado + posicion;
-
     int contador = 0;
 
     //****************************
@@ -125,129 +135,129 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
         //Posicion esquina ariba izquierda 0x0
         if (threadIdx.y == 0) {
 
-            if ((*celula + 1) == 'X') { contador++; }
-            if ((*celula + columna) == 'X') { contador++; }
-            if ((*celula + (columna + 1)) == 'X') { contador++; }
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion + columna]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
 
             //VIVA
             if (matriz[posicion] == 'X') {
 
-                if (contador >= 2) { *celulaCambio = *celula; }
-                else { *celulaCambio = 'O'; }
+                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
             //MUERTA
             else {
 
-                if (contador >= 3) { *celulaCambio = 'X'; }
-                else { *celulaCambio = *celula; }
+                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
         }
         //Posicion esquina superior derecha
         else if (threadIdx.y == (columna - 1)) {
 
-            if ((*celula - 1) == 'X') { contador++; }
-            if ((*celula + columna) == 'X') { contador++; }
-            if ((*celula + (columna - 1)) == 'X') { contador++; }
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion + columna]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
 
             //VIVA
             if (matriz[posicion] == 'X') {
 
-                if (contador >= 2) { *celulaCambio = *celula; }
-                else { *celulaCambio = 'O'; }
+                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
             //MUERTA
             else {
 
-                if (contador >= 3) { *celulaCambio = 'X'; }
-                else { *celulaCambio = *celula; }
+                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
         }
         //Posicion en la primera fila sin contar esquinas
         else {
 
-            if ((*celula - 1) == 'X') { contador++; }
-            if ((*celula + 1) == 'X') { contador++; }
-            if ((*celula + columna) == 'X') { contador++; }
-            if ((*celula + (columna - 1)) == 'X') { contador++; }
-            if ((*celula + (columna + 1)) == 'X') { contador++; }
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion + columna]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
 
             //VIVA
             if (matriz[posicion] == 'X') {
 
-                if (contador >= 2) { *celulaCambio = *celula; }
-                else { *celulaCambio = 'O'; }
+                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
             //MUERTA
             else {
 
-                if (contador >= 3) { *celulaCambio = 'X'; }
-                else { *celulaCambio = *celula; }
+                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
         }
     }
     //****************************
     //Ulima fila finalXx
-    else if (threadIdx.x == (fila - 1)){
+    else if (threadIdx.x == (fila - 1)) {
         //Posicion esquina abajo izquierda
         if (threadIdx.y == 0) {
 
-            if ((*celula + 1) == 'X') { contador++; }
-            if ((*celula - columna) == 'X') { contador++; }
-            if ((*celula - (columna - 1))) { contador++; }
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion - columna]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
 
             //VIVA
             if (matriz[posicion] == 'X') {
 
-                if (contador >= 2) { *celulaCambio = *celula; }
-                else { *celulaCambio = 'O'; }
+                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
             //MUERTA
             else {
 
-                if (contador >= 3) { *celulaCambio = 'X'; }
-                else { *celulaCambio = *celula; }
+                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
         }
         //Posicion esquina abajo derecha
-        else if (threadIdx.y == (columna - 1)){
+        else if (threadIdx.y == (columna - 1)) {
 
-            if ((*celula - 1) == 'X') { contador++; }
-            if ((*celula - columna) == 'X') { contador++; }
-            if ((*celula - (columna + 1)) == 'X') { contador++; }
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion - columna]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
 
             //VIVA
             if (matriz[posicion] == 'X') {
 
-                if (contador >= 2) { *celulaCambio = *celula; }
-                else { *celulaCambio = 'O'; }
+                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
             //MUERTA
             else {
 
-                if (contador >= 3) { *celulaCambio = 'X'; }
-                else { *celulaCambio = *celula; }
+                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
         }
         //Posiciones ultima fila entre esquinas
         else {
 
-            if ((*celula - 1) == 'X') { contador++; }
-            if ((*celula + 1) == 'X') { contador++; }
-            if ((*celula - columna) == 'X') { contador++; }
-            if ((*celula - (columna + 1)) == 'X') { contador++; }
-            if ((*celula - (columna - 1)) == 'X') { contador++; }
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion - columna]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
 
             //VIVA
             if (matriz[posicion] == 'X') {
 
-                if (contador >= 2) { *celulaCambio = *celula; }
-                else { *celulaCambio = 'O'; }
+                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
             //MUERTA
             else {
 
-                if (contador >= 3) { *celulaCambio = 'X'; }
-                else { *celulaCambio = *celula; }
+                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+                else { matrizResultado[posicion] = 'O'; }
             }
         }
     }
@@ -255,76 +265,76 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
     //Primera columna entre las dos esquinas izquierdas
     else if (threadIdx.y == 0) {
 
-        if ((*celula + 1) == 'X') { contador++; }
-        if ((*celula - columna) == 'X') { contador++; }
-        if ((*celula + columna) == 'X') { contador++; }
-        if ((*celula + (columna + 1)) == 'X') { contador++; }
-        if ((*celula - (columna - 1)) == 'X') { contador++; }
-        
+        if ((matriz[posicion + 1]) == 'X') { contador++; }
+        if ((matriz[posicion - columna]) == 'X') { contador++; }
+        if ((matriz[posicion + columna]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
+
         //VIVA
         if (matriz[posicion] == 'X') {
 
-            if (contador >= 2) { *celulaCambio = *celula; }
-            else { *celulaCambio = 'O'; }
+            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+            else { matrizResultado[posicion] = 'O'; }
         }
         //MUERTA
         else {
 
-            if (contador >= 3) { *celulaCambio = 'X'; }
-            else { *celulaCambio = *celula; }
+            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+            else { matrizResultado[posicion] = 'O'; }
         }
     }
     //****************************
     //Ultima colunmna xfinalY
     else if (threadIdx.y == columna - 1) {
 
-        if ((*celula - 1) == 'X') { contador++; }
-        if ((*celula + columna) == 'X') { contador++; }
-        if ((*celula - columna) == 'X') { contador++; }
-        if ((*celula - (columna + 1)) == 'X') { contador++; }
-        if ((*celula + (columna - 1)) == 'X') { contador++; }
+        if ((matriz[posicion - 1]) == 'X') { contador++; }
+        if ((matriz[posicion + columna]) == 'X') { contador++; }
+        if ((matriz[posicion - columna]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
 
         //VIVA
         if (matriz[posicion] == 'X') {
 
-            if (contador >= 2) { *celulaCambio = *celula; }
-            else { *celulaCambio = 'O'; }
+            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+            else { matrizResultado[posicion] = 'O'; }
         }
         //MUERTA
         else {
 
-            if (contador >= 3) { *celulaCambio = 'X'; }
-            else { *celulaCambio = *celula; }
+            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+            else { matrizResultado[posicion] = 'O'; }
         }
     }
     //****************************
     //Posiciones fuera de los margenes
     else {
-        
-        if ((*celula + 1) == 'X') { contador++; }
-        if ((*celula - 1) == 'X') { contador++; }
-        if ((*celula + columna) == 'X') { contador++; }
-        if ((*celula - columna) == 'X') { contador++; }
-        if ((*celula - (columna + 1)) == 'X') { contador++; }
-        if ((*celula - (columna - 1)) == 'X') { contador++; }
-        if ((*celula + (columna + 1)) == 'X') { contador++; }
-        if ((*celula + (columna - 1)) == 'X') { contador++; }
+
+        if ((matriz[posicion + 1]) == 'X') { contador++; }
+        if ((matriz[posicion - 1]) == 'X') { contador++; }
+        if ((matriz[posicion + columna]) == 'X') { contador++; }
+        if ((matriz[posicion - columna]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
 
         //VIVA
         if (matriz[posicion] == 'X') {
 
-            if (contador >= 2) { *celulaCambio = *celula; }
-            else { *celulaCambio = 'O'; }
+            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+            else { matrizResultado[posicion] = 'O'; }
         }
         //MUERTA
         else {
 
-            if (contador >= 3) { *celulaCambio = 'X'; }
-            else { *celulaCambio = *celula; }
+            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+            else { matrizResultado[posicion] = 'O'; }
         }
     }
 
-    printf("CONTADOR %d: %d\n", posicion, contador);
+    //printf("CONTADOR %d: %d\n", posicion, contador);
 }
 
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna) {
@@ -413,12 +423,30 @@ void imprimirMatriz(char* matriz, int dimension, int columna) {
     
     for (int i = 0; i < dimension; i ++) {
 
-        printf(" %c ",*(matriz+i));
+        if (matriz[i] == 'X') {
+            printf(" 0 ");
+        }
+        else {
+            printf(" . ");
+        }
 
         if ((i + 1) % columna == 0) {
             printf("\n");
         }
     }
+}
+
+int contarVivas(char* matriz, int dimension) {
+
+    int contador = 0;
+
+    for (int i = 0; i < dimension; i ++) {
+        if (matriz[i] == 'X') {
+            contador++;
+        }
+    }
+
+    return contador;
 }
 
 void rellenarMatriz(char* matriz, int dimension) {
@@ -431,7 +459,8 @@ void rellenarMatriz(char* matriz, int dimension) {
 
         int random = rand() % dimension + 1;
 
-        if (random % 8 == 0 | random % 9 == 0) {
+        if (random % 3 == 0 && random % 2 == 0 && random % 5 == 0) {
+            
             *celula = 'X';
         }
         else {
