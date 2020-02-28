@@ -2,6 +2,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "cuda.h"
+#include "./common/book.h"
 
 #include <time.h>
 #include <stdio.h>
@@ -14,6 +15,8 @@
 
 
 __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila, int columna);
+
+cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
 
 void imprimirMatriz(char* matriz, int dimension, int columna);
 
@@ -44,16 +47,6 @@ int main(int arg, char* argv[])
         matriz = (char*)malloc(sizeof(char) * dimension);
         matrizResultado = (char*)malloc(sizeof(char) * dimension);
 
-        //Punteros matriz
-        char* matriz_d;
-        char* matrizResultado_d;
-
-        //Dimensiones del bloque
-        dim3 blockDim(fila,columna); //Para ver arriba o abajo tendremos que sumarle el valor de la columna-1 o columna+1
-                                     //Matriz(23x24)
-                                     //ThreadIdx.x sera la fila (23)
-                                     //ThreadIdx.y sera la columna (24)
-
         //Booleano para saber si el usuario quiere manual o automatico, por defecto automatico
         bool manual = false;
 
@@ -76,30 +69,24 @@ int main(int arg, char* argv[])
 
             //Rellenamos el tablero con celulas muertas y vivas
             rellenarMatriz(matriz,dimension);
+
             printf("\n***TABLERO INICIAL***\n");
             imprimirMatriz(matriz, dimension, columna);
-            imprimirMatriz(matrizResultado, dimension, columna);
-
-            //Iniciamos el kernel
-            cudaMalloc(&matriz_d, sizeof(matriz));
-            cudaMalloc(&matrizResultado_d, sizeof(matrizResultado));
-            cudaMemcpy(matriz_d, &matriz, sizeof(matriz), cudaMemcpyHostToDevice);
-            cudaMemcpy(matrizResultado_d, &matrizResultado, sizeof(matrizResultado), cudaMemcpyHostToDevice);
 
             int generaciones = 1; //Cuenta cuantas iteraciones (generaciones) han habido
 
             //Se podria poner el resultado de una funcion que cambiara el valor de un bool terminado que dijera cuando no quedan
             //mas celulas vivas por ejemplo bool terminado = false ... while(!terminado) ... if(terminar(matriz)) terminado = true
-            while (generaciones < 2) {
+            while (generaciones < 10) {
+
+                //system("CLS");
 
                 if (generaciones == 1) {
-                    movimientoCelular << <1, blockDim >> > (matriz_d, matrizResultado_d, fila, columna);
+                    lanzarKernel(matriz, matrizResultado, fila, columna);
                 }
                 else {
-                    movimientoCelular << <1, blockDim >> > (matrizResultado_d, matrizResultado_d, fila, columna);
+                    lanzarKernel(matrizResultado, matrizResultado, fila, columna);
                 }
-
-                cudaMemcpy(&matrizResultado, matrizResultado_d, sizeof(matrizResultado), cudaMemcpyDeviceToHost);
 
                 printf("\nGeneracion: %d\n", generaciones);
                 imprimirMatriz(matrizResultado, dimension, columna);
@@ -108,12 +95,12 @@ int main(int arg, char* argv[])
                 if (manual) {
                     system("pause");
                 }
+                else {
+                    Sleep(1000);
+                }
 
                 generaciones ++;
             }
-
-            cudaFree(matriz_d);
-            cudaFree(matrizResultado_d);
         }
 
         //Liberamos los arrays
@@ -130,7 +117,296 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
     char* celula = matriz + posicion;
     char* celulaCambio = matrizResultado + posicion;
 
-    matrizResultado[posicion] = 'X';
+    int contador = 0;
+
+    //****************************
+    //Primera fila 0x
+    if (threadIdx.x == 0) {
+        //Posicion esquina ariba izquierda 0x0
+        if (threadIdx.y == 0) {
+
+            if ((*celula + 1) == 'X') { contador++; }
+            if ((*celula + columna) == 'X') { contador++; }
+            if ((*celula + (columna + 1)) == 'X') { contador++; }
+
+            //VIVA
+            if (matriz[posicion] == 'X') {
+
+                if (contador >= 2) { *celulaCambio = *celula; }
+                else { *celulaCambio = 'O'; }
+            }
+            //MUERTA
+            else {
+
+                if (contador >= 3) { *celulaCambio = 'X'; }
+                else { *celulaCambio = *celula; }
+            }
+        }
+        //Posicion esquina superior derecha
+        else if (threadIdx.y == (columna - 1)) {
+
+            if ((*celula - 1) == 'X') { contador++; }
+            if ((*celula + columna) == 'X') { contador++; }
+            if ((*celula + (columna - 1)) == 'X') { contador++; }
+
+            //VIVA
+            if (matriz[posicion] == 'X') {
+
+                if (contador >= 2) { *celulaCambio = *celula; }
+                else { *celulaCambio = 'O'; }
+            }
+            //MUERTA
+            else {
+
+                if (contador >= 3) { *celulaCambio = 'X'; }
+                else { *celulaCambio = *celula; }
+            }
+        }
+        //Posicion en la primera fila sin contar esquinas
+        else {
+
+            if ((*celula - 1) == 'X') { contador++; }
+            if ((*celula + 1) == 'X') { contador++; }
+            if ((*celula + columna) == 'X') { contador++; }
+            if ((*celula + (columna - 1)) == 'X') { contador++; }
+            if ((*celula + (columna + 1)) == 'X') { contador++; }
+
+            //VIVA
+            if (matriz[posicion] == 'X') {
+
+                if (contador >= 2) { *celulaCambio = *celula; }
+                else { *celulaCambio = 'O'; }
+            }
+            //MUERTA
+            else {
+
+                if (contador >= 3) { *celulaCambio = 'X'; }
+                else { *celulaCambio = *celula; }
+            }
+        }
+    }
+    //****************************
+    //Ulima fila finalXx
+    else if (threadIdx.x == (fila - 1)){
+        //Posicion esquina abajo izquierda
+        if (threadIdx.y == 0) {
+
+            if ((*celula + 1) == 'X') { contador++; }
+            if ((*celula - columna) == 'X') { contador++; }
+            if ((*celula - (columna - 1))) { contador++; }
+
+            //VIVA
+            if (matriz[posicion] == 'X') {
+
+                if (contador >= 2) { *celulaCambio = *celula; }
+                else { *celulaCambio = 'O'; }
+            }
+            //MUERTA
+            else {
+
+                if (contador >= 3) { *celulaCambio = 'X'; }
+                else { *celulaCambio = *celula; }
+            }
+        }
+        //Posicion esquina abajo derecha
+        else if (threadIdx.y == (columna - 1)){
+
+            if ((*celula - 1) == 'X') { contador++; }
+            if ((*celula - columna) == 'X') { contador++; }
+            if ((*celula - (columna + 1)) == 'X') { contador++; }
+
+            //VIVA
+            if (matriz[posicion] == 'X') {
+
+                if (contador >= 2) { *celulaCambio = *celula; }
+                else { *celulaCambio = 'O'; }
+            }
+            //MUERTA
+            else {
+
+                if (contador >= 3) { *celulaCambio = 'X'; }
+                else { *celulaCambio = *celula; }
+            }
+        }
+        //Posiciones ultima fila entre esquinas
+        else {
+
+            if ((*celula - 1) == 'X') { contador++; }
+            if ((*celula + 1) == 'X') { contador++; }
+            if ((*celula - columna) == 'X') { contador++; }
+            if ((*celula - (columna + 1)) == 'X') { contador++; }
+            if ((*celula - (columna - 1)) == 'X') { contador++; }
+
+            //VIVA
+            if (matriz[posicion] == 'X') {
+
+                if (contador >= 2) { *celulaCambio = *celula; }
+                else { *celulaCambio = 'O'; }
+            }
+            //MUERTA
+            else {
+
+                if (contador >= 3) { *celulaCambio = 'X'; }
+                else { *celulaCambio = *celula; }
+            }
+        }
+    }
+    //****************************
+    //Primera columna entre las dos esquinas izquierdas
+    else if (threadIdx.y == 0) {
+
+        if ((*celula + 1) == 'X') { contador++; }
+        if ((*celula - columna) == 'X') { contador++; }
+        if ((*celula + columna) == 'X') { contador++; }
+        if ((*celula + (columna + 1)) == 'X') { contador++; }
+        if ((*celula - (columna - 1)) == 'X') { contador++; }
+        
+        //VIVA
+        if (matriz[posicion] == 'X') {
+
+            if (contador >= 2) { *celulaCambio = *celula; }
+            else { *celulaCambio = 'O'; }
+        }
+        //MUERTA
+        else {
+
+            if (contador >= 3) { *celulaCambio = 'X'; }
+            else { *celulaCambio = *celula; }
+        }
+    }
+    //****************************
+    //Ultima colunmna xfinalY
+    else if (threadIdx.y == columna - 1) {
+
+        if ((*celula - 1) == 'X') { contador++; }
+        if ((*celula + columna) == 'X') { contador++; }
+        if ((*celula - columna) == 'X') { contador++; }
+        if ((*celula - (columna + 1)) == 'X') { contador++; }
+        if ((*celula + (columna - 1)) == 'X') { contador++; }
+
+        //VIVA
+        if (matriz[posicion] == 'X') {
+
+            if (contador >= 2) { *celulaCambio = *celula; }
+            else { *celulaCambio = 'O'; }
+        }
+        //MUERTA
+        else {
+
+            if (contador >= 3) { *celulaCambio = 'X'; }
+            else { *celulaCambio = *celula; }
+        }
+    }
+    //****************************
+    //Posiciones fuera de los margenes
+    else {
+        
+        if ((*celula + 1) == 'X') { contador++; }
+        if ((*celula - 1) == 'X') { contador++; }
+        if ((*celula + columna) == 'X') { contador++; }
+        if ((*celula - columna) == 'X') { contador++; }
+        if ((*celula - (columna + 1)) == 'X') { contador++; }
+        if ((*celula - (columna - 1)) == 'X') { contador++; }
+        if ((*celula + (columna + 1)) == 'X') { contador++; }
+        if ((*celula + (columna - 1)) == 'X') { contador++; }
+
+        //VIVA
+        if (matriz[posicion] == 'X') {
+
+            if (contador >= 2) { *celulaCambio = *celula; }
+            else { *celulaCambio = 'O'; }
+        }
+        //MUERTA
+        else {
+
+            if (contador >= 3) { *celulaCambio = 'X'; }
+            else { *celulaCambio = *celula; }
+        }
+    }
+
+    printf("CONTADOR %d: %d\n", posicion, contador);
+}
+
+cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna) {
+
+    char* matriz_d = NULL;
+    char* matrizResultado_d = NULL;
+
+    int dimension = fila * columna;
+
+    cudaError_t cudaStatus;
+
+    //Dimensiones del bloque
+    dim3 blockDim(fila, columna); //Para ver arriba o abajo tendremos que sumarle el valor de la columna-1 o columna+1
+                                 //Matriz(23x24)
+                                 //ThreadIdx.x sera la fila (23)
+                                 //ThreadIdx.y sera la columna (24)
+
+    //Seleccionamos el device
+    cudaStatus = cudaSetDevice(0);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaSetDevice fallo: Tienes una GPU instalada?");
+        goto Error;
+    }
+
+    //Reservamos las memorias
+    cudaStatus = cudaMalloc((void**)&matriz_d , dimension * sizeof(char));
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "ERROR: cudaMalloc matriz_d fallo.");
+        goto Error;
+    }
+
+    cudaStatus = cudaMalloc((void**)&matrizResultado_d, dimension * sizeof(char));
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "ERROR: cudaMalloc matrizResultado_d fallo.");
+        goto Error;
+    }
+
+    //Copiamos los vectores que entran por parametro
+    cudaStatus = cudaMemcpy(matriz_d, matriz, dimension * sizeof(char), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "ERROR: cudaMemcpy matriz a matriz_d fallo.");
+        goto Error;
+    }
+
+    cudaStatus = cudaMemcpy(matrizResultado_d, matrizResultado, dimension * sizeof(char), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "ERROR: cudaMemcpy matrizResultado a matrizResultado_d fallo.");
+        goto Error;
+    }
+
+
+    //Lanzamos el kernel
+    movimientoCelular << < 1, blockDim >> > (matriz_d,matrizResultado_d,fila,columna);
+
+    
+    //Miramos los errores al lanzar el kernel
+    cudaStatus = cudaGetLastError();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "ERROR: lanzamiento de kernel fallo: %s\n",cudaGetErrorString(cudaStatus));
+        goto Error;
+    }
+
+    //Miramos errores despues de lanzar el kernel
+    cudaStatus = cudaDeviceSynchronize();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "ERROR: el kernel fallo con codigo %d\n", cudaStatus);
+        goto Error;
+    }
+
+    //Copiamos el resultado en nuestra matriz
+    cudaStatus = cudaMemcpy(matrizResultado, matrizResultado_d, dimension * sizeof(char), cudaMemcpyDeviceToHost);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "ERROR: cudaMemcpy matrizResultado_d a matrizResultado fallo.");
+        goto Error;
+    }
+
+
+Error:
+    cudaFree(matriz_d);
+    cudaFree(matrizResultado_d);
+
+    return cudaStatus;
 }
 
 void imprimirMatriz(char* matriz, int dimension, int columna) {
