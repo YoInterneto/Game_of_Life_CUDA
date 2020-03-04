@@ -253,6 +253,7 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         }
     }
+    //****************************
     //Ulima fila finalXx
     else if (filaPos == (fila - 1)) {
         //Posicion esquina abajo izquierda
@@ -279,6 +280,7 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
         }
     }
+    //****************************
     //Primera columna entre las dos esquinas izquierdas
     else if (columnaPos == 0) {
 
@@ -288,6 +290,7 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
     }
+    //****************************
     //Ultima colunmna xfinalY
     else if (columnaPos == columna - 1) {
 
@@ -297,6 +300,7 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
     }
+    //****************************
     //Posiciones fuera de los margenes
     else {
 

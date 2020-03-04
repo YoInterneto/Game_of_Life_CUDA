@@ -353,12 +353,24 @@ void rellenarMatriz(char* matriz, int dimension) {
 
         int random = rand() % dimension + 1;
 
-        if (random % 3 == 0 && random % 2 == 0 && random % 5 == 0) {
-            
-            *celula = 'X';
+        //Creacion del tablero en funcion de la dimension de este
+        if (dimension <= 40) {
+            if (random % 2 == 0) {
+
+                *celula = 'X';
+            }
+            else {
+                *celula = 'O';
+            }
         }
-        else {
-            *celula = 'O';
+        else if (dimension > 40) {
+            if (random % 3 == 0 && random % 2 == 0) {
+
+                *celula = 'X';
+            }
+            else {
+                *celula = 'O';
+            }
         }
 
     }
