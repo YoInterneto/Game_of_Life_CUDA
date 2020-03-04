@@ -9,7 +9,9 @@
 #include <iostream>
 #include <stdlib.h>
 
-#define TILE_WIDTH 2
+cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
+
+__global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int fila, int columna);
 
 void imprimirMatriz(char* matriz, int dimension, int columna);
 
@@ -18,10 +20,6 @@ void rellenarMatriz(char* matriz, int dimension);
 int contarVivas(char* matriz, int dimension);
 
 int numeroBloques(int dimension, int width);
-
-cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
-
-__global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int fila, int columna);
 
 
 int main(int arg, char* argv[])
@@ -130,11 +128,11 @@ cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int colu
     HANDLE_ERROR(cudaGetDeviceProperties(&propiedades, 0));
     cudaError_t cudaStatus;
 
-    //Variables para el tamaño de los bloques y del grid
+    //Variables para el tamaï¿½o de los bloques y del grid
     int tileWidthx = fila; int tileWidthy = columna;
     int bloquesx = 1; int bloquesy = 1;
 
-    //si supera el numero de hilos dividimos la matriz en más de un bloque
+    //si supera el numero de hilos dividimos la matriz en mï¿½s de un bloque
     if (dimension > propiedades.maxThreadsPerBlock) {
 
         int anchoTesela = sqrt(propiedades.maxThreadsPerBlock);
