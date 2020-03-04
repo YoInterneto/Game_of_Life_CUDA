@@ -9,11 +9,6 @@
 #include <iostream>
 #include <stdlib.h>
 
-#ifndef __CUDACC__
-#define __CUDACC__
-#endif
-
-
 __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila, int columna);
 
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
@@ -83,11 +78,9 @@ int main(int arg, char* argv[])
             imprimirMatriz(matriz, dimension, columna);
 
             int generaciones = 1; //Cuenta cuantas iteraciones (generaciones) han habido
-            int vivas = 0;
+            int vivas = 1;
 
-            //Se podria poner el resultado de una funcion que cambiara el valor de un bool terminado que dijera cuando no quedan
-            //mas celulas vivas por ejemplo bool terminado = false ... while(!terminado) ... if(terminar(matriz)) terminado = true
-            while (vivas != dimension) {
+            while (vivas != dimension && vivas != 0) {
 
                 system("CLS");
 
@@ -129,7 +122,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
 
     int contador = 0;
 
-    //****************************
     //Primera fila 0x
     if (threadIdx.x == 0) {
         //Posicion esquina ariba izquierda 0x0
@@ -156,7 +148,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         }
     }
-    //****************************
     //Ulima fila finalXx
     else if (threadIdx.x == (fila - 1)) {
         //Posicion esquina abajo izquierda
@@ -183,7 +174,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
         }
     }
-    //****************************
     //Primera columna entre las dos esquinas izquierdas
     else if (threadIdx.y == 0) {
 
@@ -193,7 +183,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
     }
-    //****************************
     //Ultima colunmna xfinalY
     else if (threadIdx.y == columna - 1) {
 
@@ -203,7 +192,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
         if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
     }
-    //****************************
     //Posiciones fuera de los margenes
     else {
 

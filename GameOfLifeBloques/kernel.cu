@@ -103,7 +103,7 @@ int main(int arg, char* argv[])
                     system("pause");
                 }
                 else {
-                    Sleep(1);
+                    Sleep(1000);
                 }
 
                 generaciones++;
