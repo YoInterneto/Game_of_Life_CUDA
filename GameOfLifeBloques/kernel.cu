@@ -215,19 +215,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion + 1]) == 'X') { contador++; }
             if ((matriz[posicion + columna]) == 'X') { contador++; }
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posicion esquina superior derecha
         else if (columnaPos == (columna - 1)) {
@@ -235,19 +222,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion - 1]) == 'X') { contador++; }
             if ((matriz[posicion + columna]) == 'X') { contador++; }
             if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posicion en la primera fila sin contar esquinas
         else {
@@ -257,19 +231,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion + columna]) == 'X') { contador++; }
             if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
     }
     //****************************
@@ -281,19 +242,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion + 1]) == 'X') { contador++; }
             if ((matriz[posicion - columna]) == 'X') { contador++; }
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posicion esquina abajo derecha
         else if (columnaPos == (columna - 1)) {
@@ -301,19 +249,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion - 1]) == 'X') { contador++; }
             if ((matriz[posicion - columna]) == 'X') { contador++; }
             if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posiciones ultima fila entre esquinas
         else {
@@ -323,19 +258,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion - columna]) == 'X') { contador++; }
             if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
     }
     //****************************
@@ -347,19 +269,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion + columna]) == 'X') { contador++; }
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
-
-        //VIVA
-        if (matriz[posicion] == 'X') {
-
-            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
-        //MUERTA
-        else {
-
-            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
     }
     //****************************
     //Ultima colunmna xfinalY
@@ -370,19 +279,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion - columna]) == 'X') { contador++; }
         if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
-
-        //VIVA
-        if (matriz[posicion] == 'X') {
-
-            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
-        //MUERTA
-        else {
-
-            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
     }
     //****************************
     //Posiciones fuera de los margenes
@@ -396,20 +292,21 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
-
-        //VIVA
-        if (matriz[posicion] == 'X') {
-
-            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
-        //MUERTA
-        else {
-
-            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
     }
+
+    //VIVA
+    if (matriz[posicion] == 'X') {
+
+        if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+        else { matrizResultado[posicion] = 'O'; }
+    }
+    //MUERTA
+    else {
+
+        if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+        else { matrizResultado[posicion] = 'O'; }
+    }
+    
 }
 
 void imprimirMatriz(char* matriz, int dimension, int columna) {

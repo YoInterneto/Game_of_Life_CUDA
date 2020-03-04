@@ -29,7 +29,7 @@ int main(int arg, char* argv[])
  
     //Comprueba que haya solo el numero de argumento permitidos
     if (arg != 4){
-        printf("\nERROR: El numero de argumentos es erróneo (.exe <-a/-m> <fila> <columna>)\n");
+        printf("\nERROR: El numero de argumentos es errï¿½neo (.exe <-a/-m> <fila> <columna>)\n");
     }
     else {
 
@@ -138,19 +138,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion + 1]) == 'X') { contador++; }
             if ((matriz[posicion + columna]) == 'X') { contador++; }
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posicion esquina superior derecha
         else if (threadIdx.y == (columna - 1)) {
@@ -158,19 +145,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion - 1]) == 'X') { contador++; }
             if ((matriz[posicion + columna]) == 'X') { contador++; }
             if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posicion en la primera fila sin contar esquinas
         else {
@@ -180,19 +154,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion + columna]) == 'X') { contador++; }
             if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
     }
     //****************************
@@ -204,19 +165,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion + 1]) == 'X') { contador++; }
             if ((matriz[posicion - columna]) == 'X') { contador++; }
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posicion esquina abajo derecha
         else if (threadIdx.y == (columna - 1)) {
@@ -224,19 +172,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion - 1]) == 'X') { contador++; }
             if ((matriz[posicion - columna]) == 'X') { contador++; }
             if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
         //Posiciones ultima fila entre esquinas
         else {
@@ -246,19 +181,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
             if ((matriz[posicion - columna]) == 'X') { contador++; }
             if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
-
-            //VIVA
-            if (matriz[posicion] == 'X') {
-
-                if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
-            //MUERTA
-            else {
-
-                if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-                else { matrizResultado[posicion] = 'O'; }
-            }
         }
     }
     //****************************
@@ -270,19 +192,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
         if ((matriz[posicion + columna]) == 'X') { contador++; }
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
-
-        //VIVA
-        if (matriz[posicion] == 'X') {
-
-            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
-        //MUERTA
-        else {
-
-            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
     }
     //****************************
     //Ultima colunmna xfinalY
@@ -293,19 +202,6 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
         if ((matriz[posicion - columna]) == 'X') { contador++; }
         if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
-
-        //VIVA
-        if (matriz[posicion] == 'X') {
-
-            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
-        //MUERTA
-        else {
-
-            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
     }
     //****************************
     //Posiciones fuera de los margenes
@@ -319,22 +215,20 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
-
-        //VIVA
-        if (matriz[posicion] == 'X') {
-
-            if (contador >= 2) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
-        //MUERTA
-        else {
-
-            if (contador >= 3) { matrizResultado[posicion] = 'X'; }
-            else { matrizResultado[posicion] = 'O'; }
-        }
     }
 
-    //printf("CONTADOR %d: %d\n", posicion, contador);
+    //VIVA
+    if (matriz[posicion] == 'X') {
+
+        if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+        else { matrizResultado[posicion] = 'O'; }
+    }
+    //MUERTA
+    else {
+
+        if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+        else { matrizResultado[posicion] = 'O'; }
+    }
 }
 
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna) {
