@@ -17,6 +17,8 @@ void rellenarMatriz(char* matriz, int dimension);
 
 int contarVivas(char* matriz, int dimension);
 
+int numeroBloques(int dimension, int width);
+
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
 
 __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int fila, int columna);
@@ -78,9 +80,9 @@ int main(int arg, char* argv[])
             imprimirMatriz(matriz, dimension, columna);
 
             int generaciones = 1;
-            int vivas = 0;
+            int vivas = 1;
 
-            while (vivas != dimension) {
+            while (vivas != dimension && vivas != 0) {
                  
                 system("CLS");
 
@@ -101,7 +103,7 @@ int main(int arg, char* argv[])
                     system("pause");
                 }
                 else {
-                    Sleep(1000);
+                    Sleep(1);
                 }
 
                 generaciones++;
@@ -123,11 +125,31 @@ cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int colu
 
     int dimension = fila * columna;
 
+    //Propiedades del dispositivo
+    cudaDeviceProp propiedades;
+    HANDLE_ERROR(cudaGetDeviceProperties(&propiedades, 0));
     cudaError_t cudaStatus;
 
+    //Variables para el tamaño de los bloques y del grid
+    int tileWidthx = fila; int tileWidthy = columna;
+    int bloquesx = 1; int bloquesy = 1;
+
+    //si supera el numero de hilos dividimos la matriz en más de un bloque
+    if (dimension > propiedades.maxThreadsPerBlock) {
+
+        int anchoTesela = (int)sqrt(propiedades.maxThreadsPerBlock);
+
+        bloquesx = numeroBloques(fila, anchoTesela);
+        bloquesy = numeroBloques(columna, anchoTesela);
+
+        tileWidthx = anchoTesela;
+        tileWidthy = anchoTesela;
+
+    }
+
     //Dimension del bloque y grid
-    dim3 dimGrid(fila/TILE_WIDTH, columna/TILE_WIDTH);
-    dim3 dimBlock(TILE_WIDTH, TILE_WIDTH);
+    dim3 dimGrid(bloquesx, bloquesy);
+    dim3 dimBlock(tileWidthx, tileWidthy);
 
     //Seleccionamos el device
     cudaStatus = cudaSetDevice(0);
@@ -203,8 +225,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
 
     int posicion = filaPos * columna + columnaPos;
 
-    //printf("BLOCK[%dx%d] DIM[%dx%d] POSICION[%dx%d] -> %d\n", blockIdx.x, blockIdx.y, blockDim.x, blockDim.y, threadIdx.x, threadIdx.y,posicion);
-
     int contador = 0;
 
     //Primera fila 0x
@@ -233,7 +253,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         }
     }
-    //****************************
     //Ulima fila finalXx
     else if (filaPos == (fila - 1)) {
         //Posicion esquina abajo izquierda
@@ -260,7 +279,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
         }
     }
-    //****************************
     //Primera columna entre las dos esquinas izquierdas
     else if (columnaPos == 0) {
 
@@ -270,7 +288,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
     }
-    //****************************
     //Ultima colunmna xfinalY
     else if (columnaPos == columna - 1) {
 
@@ -280,7 +297,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
     }
-    //****************************
     //Posiciones fuera de los margenes
     else {
 
@@ -349,13 +365,48 @@ void rellenarMatriz(char* matriz, int dimension) {
 
         int random = rand() % dimension + 1;
 
-        if (random % 3 == 0 && random % 2 == 0) {
+        //Creacion del tablero en funcion de la dimension de este
+        if (dimension <= 40) {
+            if (random % 3 == 0) {
 
-            *celula = 'X';
+                *celula = 'X';
+            }
+            else {
+                *celula = 'O';
+            }
+        }
+        else if (dimension > 40 && dimension <= 1024) {
+            if (random % 3 == 0 && random % 2 == 0) {
+
+                *celula = 'X';
+            }
+            else {
+                *celula = 'O';
+            }
         }
         else {
-            *celula = 'O';
+            if (random % 3 == 0 && random % 5 == 0) {
+
+                *celula = 'X';
+            }
+            else {
+                *celula = 'O';
+            }
         }
 
     }
+}
+
+int numeroBloques(int dimension, int width) {
+
+    int resultado = 0;
+
+    if (dimension % width == 0) {
+        resultado = dimension / width;
+    }
+    else {
+        resultado = (dimension / width) + 1;
+    }
+
+    return resultado;
 }
