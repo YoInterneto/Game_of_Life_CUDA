@@ -1,4 +1,4 @@
-
+﻿
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "cuda.h"
@@ -9,12 +9,14 @@
 #include <iostream>
 #include <stdlib.h>
 
-#define TILE_WIDTHx 4
-#define TILE_WIDTHy 4
+#define TILEX 32
+#define TILEY 32
 
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
 
-__global__ void movimientoCelularCompartida(char* matriz, char* matrizResultado, int fila, int columna);
+__global__ void movimientoCelularCompartida(char* matriz, char* matrizResultado, int fila, int columna, int tileWidthx, int tileWidthy);
+
+int numeroBloques(int dimension, int width);
 
 int contarVivas(char* matriz, int dimension);
 
@@ -27,7 +29,7 @@ int main(int arg, char* argv[])
 
     //Comprueba que haya solo el numero de argumento permitidos
     if (arg != 4) {
-        printf("\nERROR: El numero de argumentos es err�neo (.exe <-a/-m> <fila> <columna>)\n");
+        printf("\nERROR: El numero de argumentos es erróneo (.exe <-a/-m> <fila> <columna>)\n");
     }
     else {
 
@@ -62,9 +64,6 @@ int main(int arg, char* argv[])
         else if ((strcmp("-m", argv[1]) & strcmp("-a", argv[1])) != 0) {
             printf("\nERROR: Argumentos validos solo -m[manual] o -a[automatico]\n");
         }
-        else if (propiedades.maxThreadsPerBlock < dimension) {
-            printf("\nERROR: Numero de bloques supera el maximo permitido por su tarjeta.\n");
-        }
         //Una vez comprobado todo empezamos con la ejecucion
         else {
 
@@ -81,11 +80,11 @@ int main(int arg, char* argv[])
             imprimirMatriz(matriz, dimension, columna);
 
             int generaciones = 1; //Cuenta cuantas iteraciones (generaciones) han habido
-            int vivas = 0;
+            int vivas = 1;
 
             //Se podria poner el resultado de una funcion que cambiara el valor de un bool terminado que dijera cuando no quedan
             //mas celulas vivas por ejemplo bool terminado = false ... while(!terminado) ... if(terminar(matriz)) terminado = true
-            while (vivas != dimension) {
+            while (vivas != dimension && vivas != 0) {
 
                 system("CLS");
 
@@ -121,35 +120,158 @@ int main(int arg, char* argv[])
     }
 }
 
-__global__ void movimientoCelularCompartida(char* matriz, char* matrizResultado, int fila, int columna) {
+__global__ void movimientoCelularCompartida(char* matriz, char* matrizResultado, int fila, int columna, int tileWidthx, int tileWidthy) {
 
-    __shared__ char matrizShared[TILE_WIDTHx][TILE_WIDTHy];
-    __shared__ char matrizResShared[TILE_WIDTHx][TILE_WIDTHy];
+    __shared__ char matrizShared[TILEX][TILEY];
 
     int bx = blockIdx.x;
     int by = blockIdx.y;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
 
-    int filaPos = bx * TILE_WIDTHx + tx;
-    int columnaPos = by * TILE_WIDTHy + ty;
+    int filaPos = bx * TILEX + tx;
+    int columnaPos = by * TILEY + ty;
 
+    int posicion = filaPos * columna + columnaPos;
 
+    int contador = 0;
+
+    //Primera fila 0x
+    if (filaPos == 0) {
+        //Posicion esquina ariba izquierda 0x0
+        if (columnaPos == 0) {
+
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion + columna]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
+        }
+        //Posicion esquina superior derecha
+        else if (columnaPos == (columna - 1)) {
+
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion + columna]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
+        }
+        //Posicion en la primera fila sin contar esquinas
+        else {
+
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion + columna]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
+            if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
+        }
+    }
+    //Ulima fila finalXx
+    else if (filaPos == (fila - 1)) {
+        //Posicion esquina abajo izquierda
+        if (columnaPos == 0) {
+
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion - columna]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
+        }
+        //Posicion esquina abajo derecha
+        else if (columnaPos == (columna - 1)) {
+
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion - columna]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
+        }
+        //Posiciones ultima fila entre esquinas
+        else {
+
+            if ((matriz[posicion - 1]) == 'X') { contador++; }
+            if ((matriz[posicion + 1]) == 'X') { contador++; }
+            if ((matriz[posicion - columna]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
+            if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
+        }
+    }
+    //Primera columna entre las dos esquinas izquierdas
+    else if (columnaPos == 0) {
+
+        if ((matriz[posicion + 1]) == 'X') { contador++; }
+        if ((matriz[posicion - columna]) == 'X') { contador++; }
+        if ((matriz[posicion + columna]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
+    }
+    //Ultima colunmna xfinalY
+    else if (columnaPos == columna - 1) {
+
+        if ((matriz[posicion - 1]) == 'X') { contador++; }
+        if ((matriz[posicion + columna]) == 'X') { contador++; }
+        if ((matriz[posicion - columna]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
+    }
+    //Posiciones fuera de los margenes
+    else {
+
+        if ((matriz[posicion + 1]) == 'X') { contador++; }
+        if ((matriz[posicion - 1]) == 'X') { contador++; }
+        if ((matriz[posicion + columna]) == 'X') { contador++; }
+        if ((matriz[posicion - columna]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
+        if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
+    }
+
+    //VIVA
+    if (matriz[posicion] == 'X') {
+
+        if (contador >= 2) { matrizShared[tx][ty] = 'X'; }
+        else { matrizShared[tx][ty] = 'O'; }
+    }
+    //MUERTA
+    else {
+
+        if (contador >= 3) { matrizShared[tx][ty] = 'X'; }
+        else { matrizShared[tx][ty] = 'O'; }
+    }
+
+    __syncthreads();
+
+    matrizResultado[posicion] = matrizShared[tx][ty];
+
+    __syncthreads();
 }
 
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna) {
 
     //Punteros a las matrices que se meten por el kernel
-    char* matriz_d;
-    char* matrizResultado_d;
+    char* matriz_d = NULL;
+    char* matrizResultado_d = NULL;
 
     int dimension = fila * columna;
 
+    //Propiedades del dispositivo
+    cudaDeviceProp propiedades;
+    HANDLE_ERROR(cudaGetDeviceProperties(&propiedades, 0));
     cudaError_t cudaStatus;
 
+    //Variables para el tama�o de los bloques y del grid
+    int tileWidthx = fila; int tileWidthy = columna;
+    int bloquesx = 1; int bloquesy = 1;
+
+    //si supera el numero de hilos dividimos la matriz en m�s de un bloque
+    if (dimension > propiedades.maxThreadsPerBlock) {
+
+        int anchoTesela = sqrt(propiedades.maxThreadsPerBlock);
+
+        bloquesx = numeroBloques(fila, anchoTesela);
+        bloquesy = numeroBloques(columna, anchoTesela);
+
+        tileWidthx = anchoTesela;
+        tileWidthy = anchoTesela;
+
+    }
+
     //Dimension del bloque y grid
-    dim3 dimGrid(fila / TILE_WIDTHx, columna / TILE_WIDTHy);
-    dim3 dimBlock(TILE_WIDTHx, TILE_WIDTHy);
+    dim3 dimGrid(bloquesx, bloquesy);
+    dim3 dimBlock(tileWidthx, tileWidthy);
 
     //Seleccionamos el device
     cudaStatus = cudaSetDevice(0);
@@ -186,7 +308,7 @@ cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int colu
 
 
     //Lanzamos el kernel
-    movimientoCelularCompartida << < dimGrid, dimBlock >> > (matriz_d, matrizResultado_d, fila, columna);
+    movimientoCelularCompartida << < dimGrid, dimBlock >> > (matriz_d, matrizResultado_d, fila, columna, tileWidthx, tileWidthy);
 
 
     //Miramos los errores al lanzar el kernel
@@ -258,13 +380,39 @@ void rellenarMatriz(char* matriz, int dimension) {
 
         int random = rand() % dimension + 1;
 
-        if (random % 3 == 0 && random % 2 == 0 && random % 5 == 0) {
+        //Creacion del tablero en funcion de la dimension de este
+        if (dimension <= 40) {
+            if (random % 2 == 0) {
 
-            *celula = 'X';
+                *celula = 'X';
+            }
+            else {
+                *celula = 'O';
+            }
         }
-        else {
-            *celula = 'O';
+        else if (dimension > 40) {
+            if (random % 3 == 0 && random % 2 == 0) {
+
+                *celula = 'X';
+            }
+            else {
+                *celula = 'O';
+            }
         }
 
     }
+}
+
+int numeroBloques(int dimension, int width) {
+
+    int resultado = 0;
+
+    if (dimension % width == 0) {
+        resultado = dimension / width;
+    }
+    else {
+        resultado = (dimension / width) + 1;
+    }
+
+    return resultado;
 }
