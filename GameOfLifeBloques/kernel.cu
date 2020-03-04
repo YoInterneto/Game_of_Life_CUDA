@@ -137,7 +137,7 @@ cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int colu
     //si supera el numero de hilos dividimos la matriz en más de un bloque
     if (dimension > propiedades.maxThreadsPerBlock) {
 
-        int anchoTesela = (int)sqrt(propiedades.maxThreadsPerBlock);
+        int anchoTesela = sqrt(propiedades.maxThreadsPerBlock);
 
         bloquesx = numeroBloques(fila, anchoTesela);
         bloquesy = numeroBloques(columna, anchoTesela);
@@ -367,7 +367,7 @@ void rellenarMatriz(char* matriz, int dimension) {
 
         //Creacion del tablero en funcion de la dimension de este
         if (dimension <= 40) {
-            if (random % 3 == 0) {
+            if (random % 2 == 0) {
 
                 *celula = 'X';
             }
@@ -375,7 +375,7 @@ void rellenarMatriz(char* matriz, int dimension) {
                 *celula = 'O';
             }
         }
-        else if (dimension > 40 && dimension <= 1024) {
+        else if (dimension > 40) {
             if (random % 3 == 0 && random % 2 == 0) {
 
                 *celula = 'X';
@@ -384,16 +384,6 @@ void rellenarMatriz(char* matriz, int dimension) {
                 *celula = 'O';
             }
         }
-        else {
-            if (random % 3 == 0 && random % 5 == 0) {
-
-                *celula = 'X';
-            }
-            else {
-                *celula = 'O';
-            }
-        }
-
     }
 }
 
