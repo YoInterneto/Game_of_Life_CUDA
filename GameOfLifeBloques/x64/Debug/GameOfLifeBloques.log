@@ -4,4 +4,5 @@
   kernel.cu
 C:/Users/Alberto/Documents/GitHub/Game_of_Life_CUDA/GameOfLifeBloques/kernel.cu(139): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
 C:/Users/Alberto/Documents/GitHub/Game_of_Life_CUDA/GameOfLifeBloques/kernel.cu(359): warning C4244: 'argumento': conversión de 'time_t' a 'unsigned int'; posible pérdida de datos
+     Creando biblioteca C:\Users\Alberto\Documents\GitHub\Game_of_Life_CUDA\GameOfLifeBloques\x64\Debug\GameOfLifeBloques.lib y objeto C:\Users\Alberto\Documents\GitHub\Game_of_Life_CUDA\GameOfLifeBloques\x64\Debug\GameOfLifeBloques.exp
   GameOfLifeBloques.vcxproj -> C:\Users\Alberto\Documents\GitHub\Game_of_Life_CUDA\GameOfLifeBloques\x64\Debug\GameOfLifeBloques.exe

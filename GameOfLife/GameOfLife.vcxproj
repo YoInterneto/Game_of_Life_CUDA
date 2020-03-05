@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{33EEBAD4-8218-47B7-8D12-A1E09C1188E8}</ProjectGuid>
+    <ProjectGuid>{DBBCD0DA-0FCD-4B0B-8153-06BF996416F9}</ProjectGuid>
     <RootNamespace>GameOfLife</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
