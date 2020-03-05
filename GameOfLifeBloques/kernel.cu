@@ -251,7 +251,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         }
     }
-    //****************************
     //Ulima fila finalXx
     else if (filaPos == (fila - 1)) {
         //Posicion esquina abajo izquierda
@@ -278,7 +277,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
             if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
         }
     }
-    //****************************
     //Primera columna entre las dos esquinas izquierdas
     else if (columnaPos == 0) {
 
@@ -288,7 +286,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion + (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion - (columna - 1)]) == 'X') { contador++; }
     }
-    //****************************
     //Ultima colunmna xfinalY
     else if (columnaPos == columna - 1) {
 
@@ -298,7 +295,6 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
         if ((matriz[posicion - (columna + 1)]) == 'X') { contador++; }
         if ((matriz[posicion + (columna - 1)]) == 'X') { contador++; }
     }
-    //****************************
     //Posiciones fuera de los margenes
     else {
 
@@ -315,13 +311,13 @@ __global__ void movimientoCelularBloque(char* matriz, char* matrizResultado, int
     //VIVA
     if (matriz[posicion] == 'X') {
 
-        if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+        if (contador == 2 || contador == 3) { matrizResultado[posicion] = 'X'; }
         else { matrizResultado[posicion] = 'O'; }
     }
     //MUERTA
     else {
 
-        if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+        if (contador == 3) { matrizResultado[posicion] = 'X'; }
         else { matrizResultado[posicion] = 'O'; }
     }
     
@@ -331,12 +327,7 @@ void imprimirMatriz(char* matriz, int dimension, int columna) {
 
     for (int i = 0; i < dimension; i++) {
 
-        if (matriz[i] == 'X') {
-            printf(" 0 ");
-        }
-        else {
-            printf(" . ");
-        }
+        printf(" %c ", matriz[i]);
 
         if ((i + 1) % columna == 0) {
             printf("\n");
