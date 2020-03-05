@@ -9,6 +9,10 @@
 #include <iostream>
 #include <stdlib.h>
 
+#define MUERTA "\x1b[34m"
+#define VIVA "\x1b[36m"
+#define RESET "\x1b[0m"
+
 __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila, int columna);
 
 cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int columna);
@@ -21,10 +25,10 @@ void rellenarMatriz(char* matriz, int dimension);
 
 int main(int arg, char* argv[])
 {
- 
+
     //Comprueba que haya solo el numero de argumento permitidos
-    if (arg != 4){
-        printf("\nERROR: El numero de argumentos es err�neo (.exe <-a/-m> <fila> <columna>)\n");
+    if (arg != 4) {
+        printf("\nERROR: El numero de argumentos es erroneo (.exe <-a/-m> <fila> <columna>)\n");
     }
     else {
 
@@ -59,7 +63,7 @@ int main(int arg, char* argv[])
         else if ((strcmp("-m", argv[1]) & strcmp("-a", argv[1])) != 0) {
             printf("\nERROR: Argumentos validos solo -m[manual] o -a[automatico]\n");
         }
-        else if(propiedades.maxThreadsPerBlock < dimension){
+        else if (propiedades.maxThreadsPerBlock < dimension) {
             printf("\nERROR: Numero de bloques supera el maximo permitido por su tarjeta.\n");
         }
         //Una vez comprobado todo empezamos con la ejecucion
@@ -72,10 +76,10 @@ int main(int arg, char* argv[])
             }
 
             //Rellenamos el tablero con celulas muertas y vivas
-            rellenarMatriz(matriz,dimension);
+            rellenarMatriz(matriz, dimension);
 
             printf("\n***TABLERO INICIAL***\n");
-            imprimirMatriz(matriz, dimension, columna);
+            //imprimirMatriz(matriz, dimension, columna);
 
             int generaciones = 1; //Cuenta cuantas iteraciones (generaciones) han habido
             int vivas = 1;
@@ -105,7 +109,7 @@ int main(int arg, char* argv[])
                     Sleep(1000);
                 }
 
-                generaciones ++;
+                generaciones++;
             }
         }
 
@@ -208,13 +212,13 @@ __global__ void movimientoCelular(char* matriz, char* matrizResultado, int fila,
     //VIVA
     if (matriz[posicion] == 'X') {
 
-        if (contador >= 2) { matrizResultado[posicion] = 'X'; }
+        if (contador == 2 || contador == 3) { matrizResultado[posicion] = 'X'; }
         else { matrizResultado[posicion] = 'O'; }
     }
     //MUERTA
     else {
 
-        if (contador >= 3) { matrizResultado[posicion] = 'X'; }
+        if (contador == 3) { matrizResultado[posicion] = 'X'; }
         else { matrizResultado[posicion] = 'O'; }
     }
 }
@@ -229,10 +233,7 @@ cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int colu
     cudaError_t cudaStatus;
 
     //Dimensiones del bloque
-    dim3 blockDim(fila, columna); //Para ver arriba o abajo tendremos que sumarle el valor de la columna-1 o columna+1
-                                 //Matriz(23x24)
-                                 //ThreadIdx.x sera la fila (23)
-                                 //ThreadIdx.y sera la columna (24)
+    dim3 blockDim(fila, columna); 
 
     //Seleccionamos el device
     cudaStatus = cudaSetDevice(0);
@@ -242,7 +243,7 @@ cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int colu
     }
 
     //Reservamos las memorias
-    cudaStatus = cudaMalloc((void**)&matriz_d , dimension * sizeof(char));
+    cudaStatus = cudaMalloc((void**)&matriz_d, dimension * sizeof(char));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "ERROR: cudaMalloc matriz_d fallo.");
         goto Error;
@@ -269,13 +270,13 @@ cudaError_t lanzarKernel(char* matriz, char* matrizResultado, int fila, int colu
 
 
     //Lanzamos el kernel
-    movimientoCelular << < 1, blockDim >> > (matriz_d,matrizResultado_d,fila,columna);
+    movimientoCelular << < 1, blockDim >> > (matriz_d, matrizResultado_d, fila, columna);
 
-    
+
     //Miramos los errores al lanzar el kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "ERROR: lanzamiento de kernel fallo: %s\n",cudaGetErrorString(cudaStatus));
+        fprintf(stderr, "ERROR: lanzamiento de kernel fallo: %s\n", cudaGetErrorString(cudaStatus));
         goto Error;
     }
 
@@ -302,14 +303,14 @@ Error:
 }
 
 void imprimirMatriz(char* matriz, int dimension, int columna) {
-    
-    for (int i = 0; i < dimension; i ++) {
+
+    for (int i = 0; i < dimension; i++) {
 
         if (matriz[i] == 'X') {
-            printf(" 0 ");
+            printf(VIVA " X " RESET);
         }
         else {
-            printf(" . ");
+            printf(MUERTA " O " RESET);
         }
 
         if ((i + 1) % columna == 0) {
@@ -322,7 +323,7 @@ int contarVivas(char* matriz, int dimension) {
 
     int contador = 0;
 
-    for (int i = 0; i < dimension; i ++) {
+    for (int i = 0; i < dimension; i++) {
         if (matriz[i] == 'X') {
             contador++;
         }
@@ -332,7 +333,7 @@ int contarVivas(char* matriz, int dimension) {
 }
 
 void rellenarMatriz(char* matriz, int dimension) {
-    
+
     srand(time(0));
 
     for (int i = 0; i < dimension; i++) {
